@@ -1,18 +1,3 @@
-"""
-
-file_path = "project_structure.md"
-with open(file_path, "w", encoding="utf-8") as f:
-f.write(markdown_content)
-
-print(f"File created successfully: {file_path}")
-
-ご指定いただいたプロジェクト構成から絵文字を削除し、Markdown形式に整形いたしました。
-
-Your Markdown file is ready
-[file-tag: code-generated-file-0-1781775580320691884]
-
-以下にテキストとしても表示しますので、そのままコピーしてご利用いただけます。
-
 ```markdown
 your-project-root/
 ├── public/                  # 静的フロントエンドファイル
