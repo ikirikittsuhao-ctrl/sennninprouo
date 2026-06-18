@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: sennintube-service
+    env: node
+    plan: starter
+    region: singapore
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    envVars:
+      - key: NODE_VERSION
+        value: 18.18.0
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true
