@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>SenninTube - 再生</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header></header>
+
+  <div class="app-layout">
+    <aside></aside>
+
+    <main class="main-content">
+      <div class="player-layout">
+        
+        <div class="left-col">
+          <div class="player-container" id="playerContainer">
+            <div class="loading-spinner"><div class="spinner"></div></div>
+          </div>
+          
+          <div class="details-box">
+            <h1 id="vTitle" style="font-size: 20px; font-weight: 600; line-height: 1.4;"></h1>
+            
+            <div class="video-action-tier">
+              <div class="channel-row" style="margin: 0; display: flex; align-items: center; gap: 12px;">
+                <img id="cImg" class="channel-img" src="" alt="" style="width: 40px; height: 40px; border-radius: 50%;">
+                <div id="cName" style="font-weight: 500; font-size: 16px;"></div>
+              </div>
+
+              <div class="action-buttons">
+                <select id="streamSource" style="background-color: var(--bg-surface); color: var(--text-primary); border: none; padding: 0 12px; height: 36px; border-radius: 18px; font-size: 14px; outline: none; cursor: pointer; font-weight: 500;">
+                  <option value="default">通常Stream</option>
+                  <option value="sia">SiaStream</option>
+                  <option value="nocookie">NoCookie</option>
+                  <option value="scratch">Edu (Scratch)</option>
+                  <option value="kahoot">Edu (Kahoot)</option>
+                </select>
+
+                <button class="action-btn" id="favBtn">
+                  <span class="material-symbols-outlined">favorite</span>お気に入り
+                </button>
+                <button class="action-btn" id="laterBtn">
+                  <span class="material-symbols-outlined">schedule</span>後で見る
+                </button>
+                <button class="action-btn" onclick="openPlaylistModal()">
+                  <span class="material-symbols-outlined">playlist_add</span>保存
+                </button>
+              </div>
+            </div>
+
+            <div id="vDesc" class="desc-box"></div>
+          </div>
+
+          <div class="comment-section">
+            <h3 id="commentCount">コメント</h3>
+            <div id="commentsBox"></div>
+          </div>
+        </div>
+
+        <div class="right-col">
+          <h3 style="margin-bottom: 16px; font-size: 16px; font-weight: 500;">関連動画</h3>
+          <div id="sideGrid" style="display: flex; flex-direction: column; gap: 16px;"></div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay" onclick="closePlaylistModal()"></div>
+  <div class="playlist-modal" id="playlistModal">
+    <h3 style="margin-bottom:16px; font-size:16px;">プレイリストに保存</h3>
+    <div id="modalPlaylistsList" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; margin-bottom:16px;"></div>
+    <button class="action-btn" onclick="closePlaylistModal()" style="width:100%; justify-content:center;">閉じる</button>
+  </div>
+
+  <script src="/js/storage.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoId = urlParams.get("v");
+    const pContainer = document.getElementById("playerContainer");
+    const sourceSelect = document.getElementById("streamSource");
+    let globalVideoObject = null;
+
+    async function loadVideoPage() {
+      if (!videoId) return;
+      try {
+        const res = await fetch(`/video/${videoId}`);
+        const { videoData, commentsData } = await res.json();
+
+        globalVideoObject = {
+          id: videoId,
+          title: videoData.videoTitle,
+          thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+          channelTitle: videoData.channelName
+        };
+
+        StorageManager.add("history", globalVideoObject);
+
+        document.getElementById("vTitle").innerText = videoData.videoTitle || "";
+        document.getElementById("cName").innerText = videoData.channelName || "";
+        document.getElementById("vDesc").innerText = videoData.videoDes || "";
+        if (videoData.channelImage) document.getElementById("cImg").src = videoData.channelImage;
+
+        renderComments(commentsData.comments || []);
+        loadRecs(videoData.videoTitle, videoData.channelName);
+        
+        switchStream(sourceSelect.value);
+
+        fetch("/api/save-history", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ id: videoId })
+        });
+      } catch (e) {
+        pContainer.innerHTML = "<div style='padding:20px;'>読み込みエラー</div>";
+      }
+    }
+
+    async function switchStream(sourceType) {
+      if (!videoId) return;
+      pContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+
+      try {
+        if (sourceType === "default") {
+          const res = await fetch(`/video/${videoId}`);
+          const { videoData } = await res.json();
+          if (videoData.stream_url && videoData.stream_url !== "youtube-nocookie") {
+            pContainer.innerHTML = `<video src="${videoData.stream_url}" controls autoplay></video>`;
+          } else {
+            pContainer.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1" allowfullscreen></iframe>`;
+          }
+        } 
+        else if (sourceType === "sia") {
+          const res = await fetch(`/sia-dl/${videoId}`);
+          const videoData = await res.json();
+          if (videoData.stream_url) {
+            pContainer.innerHTML = `<video src="${videoData.stream_url}" controls autoplay></video>`;
+          } else {
+            pContainer.innerHTML = `<div style='padding:20px; text-align:center;'>SiaStream 取得失敗</div>`;
+          }
+        } 
+        else if (sourceType === "nocookie") {
+          const res = await fetch(`/nocookie/${videoId}`);
+          const embedUrl = await res.text();
+          pContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+        } 
+        else if (sourceType === "scratch") {
+          const res = await fetch(`/scratch-edu/${videoId}`);
+          const embedUrl = await res.text();
+          pContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+        } 
+        else if (sourceType === "kahoot") {
+          const res = await fetch(`/kahoot-edu/${videoId}`);
+          const embedUrl = await res.text();
+          pContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+        }
+      } catch (e) {
+        pContainer.innerHTML = `<div style='padding:20px; text-align:center;'>切り替えエラー</div>`;
+      }
+    }
+
+    sourceSelect.onchange = (e) => switchStream(e.target.value);
+
+    document.getElementById("favBtn").onclick = () => {
+      if (globalVideoObject) {
+        StorageManager.add("favorites", globalVideoObject);
+        alert("お気に入りに追加しました");
+      }
+    };
+
+    document.getElementById("laterBtn").onclick = () => {
+      if (globalVideoObject) {
+        StorageManager.add("watch-later", globalVideoObject);
+        alert("後で見るに追加しました");
+      }
+    };
+
+    function openPlaylistModal() {
+      if (!globalVideoObject) return;
+      document.getElementById("modalOverlay").style.display = "block";
+      const modal = document.getElementById("playlistModal");
+      modal.style.display = "block";
+      
+      const listContainer = document.getElementById("modalPlaylistsList");
+      listContainer.innerHTML = "";
+      const playlists = StorageManager.getPlaylists();
+      
+      Object.keys(playlists).forEach(name => {
+        const div = document.createElement("div");
+        div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);";
+        div.innerHTML = `
+          <span style="font-size:14px;">${name}</span>
+          <button onclick="StorageManager.addToPlaylist('${name}', globalVideoObject); alert('追加しました'); closePlaylistModal();" style="background:var(--bg-main); border:none; color:var(--text-primary); padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px;">追加</button>
+        `;
+        listContainer.appendChild(div);
+      });
+      if (!Object.keys(playlists).length) {
+        listContainer.innerHTML = "<p style='font-size:12px; color:var(--text-secondary);'>プレイリストがありません。ホームのサイドバーから作成してください。</p>";
+      }
+    }
+
+    function closePlaylistModal() {
+      document.getElementById("modalOverlay").style.display = "none";
+      document.getElementById("playlistModal").style.display = "none";
+    }
+
+    function renderComments(comments) {
+      const box = document.getElementById("commentsBox");
+      box.innerHTML = comments.length ? "" : "<p>コメントはありません</p>";
+      comments.forEach(c => {
+        const item = document.createElement("div");
+        item.className = "comment-item";
+        item.innerHTML = `
+          <img src="${c.authorThumb}" class="comment-avatar">
+          <div class="comment-content-wrapper">
+            <div class="comment-header">${c.author}</div>
+            <div class="comment-text">${c.text}</div>
+          </div>
+        `;
+        box.appendChild(item);
+      });
+    }
+
+    async function loadRecs(title, channel) {
+      try {
+        const res = await fetch(`/api/recommendations?title=${encodeURIComponent(title)}&channel=${encodeURIComponent(channel)}&id=${videoId}`);
+        const data = await res.json();
+        const sideGrid = document.getElementById("sideGrid");
+        sideGrid.innerHTML = "";
+        
+        (data.items || []).slice(0, 12).forEach(item => {
+          const card = document.createElement("div");
+          card.className = "video-card";
+          card.style.cssText = "display:flex; flex-direction:row; gap:8px; cursor:pointer;";
+          card.onclick = () => { window.location.href = `/watch.html?v=${item.id}`; };
+
+          const thumb = item.thumbnail?.url || item.thumbnail || `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`;
+          card.innerHTML = `
+            <div class="thumbnail-container" style="width:168px; min-width:168px; border-radius:8px;">
+              <img src="${thumb}">
+            </div>
+            <div class="video-details">
+              <div class="video-title" style="font-size:13px; -webkit-line-clamp:2;">${item.title}</div>
+              <div class="video-author" style="font-size:11px;">${item.author?.name || ''}</div>
+            </div>
+          `;
+          sideGrid.appendChild(card);
+        });
+      } catch (e) {}
+    }
+
+    // 再生ページ用のサイドバープレイリストダミーレンダラー
+    function renderSidebarPlaylists() {}
+
+    window.onload = async () => {
+      await initCommonComponents('none');
+      loadVideoPage();
+    };
+  </script>
+</body>
+</html>
