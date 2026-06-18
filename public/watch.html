@@ -223,16 +223,16 @@
         const item = document.createElement("div");
         item.className = "comment-item";
         
-        let commentAvatar = `https://mirror.unbanned-analytics.com/ggpht/channels-4/download?c_id=${c.authorId || ''}`;
-        if (c.authorThumb && (c.authorThumb.startsWith("http") || c.authorThumb.startsWith("//"))) {
-          commentAvatar = c.authorThumb;
+        let commentAvatar = `https://mirror.unbanned-analytics.com/ggpht/channels-4/download?c_id=${c.authorChannelId || ''}`;
+        if (c.authorThumbnail && (c.authorThumbnail.startsWith("http") || c.authorThumbnail.startsWith("//"))) {
+          commentAvatar = c.authorThumbnail;
         }
 
         item.innerHTML = `
           <img src="${commentAvatar}" class="comment-avatar">
           <div class="comment-content-wrapper">
-            <div class="comment-header">${c.author}</div>
-            <div class="comment-text">${c.text}</div>
+            <div class="comment-header">${c.authorName || c.author || ''}</div>
+            <div class="comment-text">${c.comment || c.text || ''}</div>
           </div>
         `;
         box.appendChild(item);
@@ -240,10 +240,10 @@
     }
 
     async function loadVideoPageWithAvatar(item, containerEl) {
-      const channelId = item.authorId || item.channelId || "";
+      const channelId = item.authorChannelId || item.authorId || item.channelId || "";
       let avatarUrl = `https://mirror.unbanned-analytics.com/ggpht/channels-4/download?c_id=${channelId}`;
-      if (item.authorThumb && (item.authorThumb.startsWith("http") || item.authorThumb.startsWith("//"))) {
-        avatarUrl = item.authorThumb;
+      if (item.authorThumbnail && (item.authorThumbnail.startsWith("http") || item.authorThumbnail.startsWith("//"))) {
+        avatarUrl = item.authorThumbnail;
       }
       if (containerEl) containerEl.style.backgroundImage = `url('${avatarUrl}')`;
     }
