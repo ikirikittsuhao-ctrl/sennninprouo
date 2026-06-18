@@ -1,7 +1,12 @@
-const express = require("express");
-const path = require("path");
-const cookieParser = require("cookie-parser");
-const fetch = require("node-fetch");
+import express from "express";
+import path from "path";
+import cookieParser from "cookie-parser";
+import fetch from "node-fetch";
+import { fileURLToPath } from "url";
+
+// ES Modules環境で __dirname を再現するための設定
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -11,40 +16,11 @@ app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
 
-app.use(async (req, res, next) => {
-  if (req.path.startsWith("/api") || req.path.startsWith("/video") || req.path === "/") {
-    if (!req.cookies || req.cookies.humanVerified !== "true") {
-      const pages = [
-        'https://raw.githubusercontent.com/mino-hobby-pro/memo/refs/heads/main/min-tube-pro-main-loading.txt',
-        'https://raw.githubusercontent.com/mino-hobby-pro/memo/refs/heads/main/min-tube-pro-sub-roading-like-command-loader-local.txt',
-        'https://raw.githubusercontent.com/mino-hobby-pro/memo/refs/heads/main/google.txt',
-        'https://raw.githubusercontent.com/mino-hobby-pro/memo/refs/heads/main/history.html.txt',
-        'https://raw.githubusercontent.com/mino-hobby-pro/memo/refs/heads/main/gisou/chapcha.html',
-        'https://raw.githubusercontent.com/mino-hobby-pro/memo/refs/heads/main/gisou/easy.html',
-        'https://raw.githubusercontent.com/mino-hobby-pro/MIN-Tube-Pro/refs/heads/main/gizo/Login.html',
-        'https://github.com/mino-hobby-pro/MIN-Tube-Pro/raw/refs/heads/main/gizo/TU.html',
-        'https://github.com/mino-hobby-pro/MIN-Tube-Pro/raw/refs/heads/main/gizo/classroom.html',
-        'https://github.com/mino-hobby-pro/MIN-Tube-Pro/raw/refs/heads/main/gizo/kensaku.html',
-        'https://github.com/mino-hobby-pro/MIN-Tube-Pro/raw/refs/heads/main/gizo/wikipedia.html'
-      ];
-      const randomPage = pages[Math.floor(Math.random() * pages.length)];
-      try {
-        const response = await fetch(randomPage);
-        const htmlContent = await response.text();
-        return res.render("robots", { content: htmlContent });
-      } catch (err) {
-        return res.render("robots", { content: "<p>Verification Required</p>" });
-      }
-    }
-  }
-  next();
-});
+import { router as apiModuleRouter } from "./routes/api.js";
+import videoModule from "./routes/video.js";
+import eduModule from "./routes/edu.js";
 
-const apiModule = require("./routes/api");
-const videoModule = require("./routes/video");
-const eduModule = require("./routes/edu");
-
-app.use("/api", apiModule.router);
+app.use("/api", apiModuleRouter);
 app.use("/", videoModule);
 app.use("/", eduModule);
 
