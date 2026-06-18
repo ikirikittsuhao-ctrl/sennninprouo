@@ -1,0 +1,22 @@
+<button class="side-item" id="sideHomeBtn" onclick="location.href='/'">
+  <span class="material-symbols-outlined">home</span><span class="side-text">ホーム</span>
+</button>
+<hr>
+<div class="side-section-title">ライブラリ</div>
+<button class="side-item" id="sideHistoryBtn" onclick="changeSection('history')">
+  <span class="material-symbols-outlined">history</span><span class="side-text">履歴</span>
+</button>
+<button class="side-item" id="sideFavBtn" onclick="changeSection('favorites')">
+  <span class="material-symbols-outlined">favorite</span><span class="side-text">お気に入り</span>
+</button>
+<button class="side-item" id="sideLaterBtn" onclick="changeSection('watch-later')">
+  <span class="material-symbols-outlined">schedule</span><span class="side-text">後で見る</span>
+</button>
+<hr>
+<div class="side-section-title">プレイリスト</div>
+<div id="sidebarPlaylists"></div>
+<div style="padding: 4px 12px;" class="side-create-box">
+  <button onclick="promptCreatePlaylist()" style="background:none; border:none; color:var(--text-secondary); display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+    <span class="material-symbols-outlined" style="font-size:18px;">add</span><span class="side-text">新規作成</span>
+  </button>
+</div>
