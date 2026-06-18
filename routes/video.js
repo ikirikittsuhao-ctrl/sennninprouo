@@ -1,8 +1,8 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const fetch = require("node-fetch");
-const yts = require("youtube-search-api");
-const { apiListCache, fetchWithTimeout } = require("./api");
+import fetch from "node-fetch";
+import yts from "youtube-search-api";
+import { apiListCache, fetchWithTimeout } from "./api.js";
 
 const videoCache = new Map();
 const RAPID_API_HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
@@ -99,7 +99,7 @@ router.get('/rapid/:id', async (req, res) => {
     }
 
     const highResStream = data.adaptiveFormats?.find(f => f.qualityLabel === '1080p') || data.adaptiveFormats?.[0];
-    const audioStream = data.adaptiveFormats?.find(f => f.mimeType.includes('audio')) || data.adaptiveFormats?. [data.adaptiveFormats?.length - 1];
+    const audioStream = data.adaptiveFormats?.find(f => f.mimeType.includes('audio')) || data.adaptiveFormats?.[data.adaptiveFormats?.length - 1];
 
     res.json({
       stream_url: data.formats?.[0]?.url || "",
@@ -183,7 +183,7 @@ router.get('/sia-dl/:videoId', async (req, res) => {
 });
 
 router.get('/ai-fetch/:videoId', async (req, res) => {
-  const _0x5a1e = ['\x6c\x69\x6b\x65\x43\x6f\x75\x6e\x74', '\x76\x69\x64\x65\x6f\x44\x65\x73', '\x67\x65\x74', '\x68\x6f\x73\x74', '\x61\x62\x6f\x72\x74', '\x74\x65\x78\x74', '\x70\x72\x6f\x74\x6f\x63\x6f\x6c', '\x6a\x73\x6f\x6e', '\x76\x69\x64\x65\x6f\x49\x64', '\x65\x72\x72\x6f\x72', '\x61\x69\x2d\x66\x65\x74\x63\x68', '\x68\x74\x74\x70\x73\x3a\x2f\x2f\x61\x70\x69\x2e\x61\x69\x6a\x69\x6d\x7y\x2e\x63\x6f\x6d\x2f\x67\x65\x74\x3f\x63\x6f\x64\x65\x3d\x67\x65\x74\x2d\x79\x6f\x75\x74\x75\x62\x65\x2d\x76\x69\x64\x65\x6f\x64\x61\x74\x61\x26\x74\x65\x78\x74\x3d', '\x73\x74\x61\x74\x75\x73'];
+  const _0x5a1e = ['\x6c\x69\x6b\x65\x43\x6f\x75\x6e\x74', '\x76\x69\x64\x65\x6f\x44\x65\x73', '\x67\x65\x74', '\x68\x6f\x73\x74', '\x61\x62\x6f\x72\x74', '\x74\x65\x78\x74', '\x70\x72\x6f\x74\x6f\x63\x6f\x6c', '\x6a\x73\x6f\x6e', '\x76\x69\x64\x65\x6f\x49\x64', '\x65\x72\x72\x6f\x72', '\x61\x69\x2d\x66\x65\x74\x63\x68', 'https://api.aijimy.com/get?code=get-youtube-videodata&text=', '\x73\x74\x61\x74\x75\x73'];
   const _0x42f1 = function(a, b) { return _0x5a1e[a - 0x0]; };
   const videoId = req.params[_0x42f1('0x8')];
   const _0x1f22a1 = (function(a) { return a.split('').reverse().join(''); })('\x3d\x74\x78\x65\x74\x26\x61\x74\x61\x64\x6f\x65\x64\x69\x76\x2d\x65\x62\x75\x74\x75\x6f\x79\x2d\x74\x65\x67\x3d\x65\x64\x6f\x63\x3f\x74\x65\x67\x2f\x6d\x6f\x63\x2e\x79\x6d\x69\x6a\x69\x61\x2e\x69\x70\x61\x2f\x2f\x3a\x73\x70\x74\x74\x68');
@@ -264,4 +264,4 @@ router.get('/ai-fetch/:videoId', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
