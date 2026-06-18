@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>SenninTube - 再生</title>
+  <title>try it</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -101,8 +101,17 @@
 
         document.getElementById("vTitle").innerText = videoData.videoTitle || "";
         document.getElementById("cName").innerText = videoData.channelName || "";
-        document.getElementById("vDesc").innerText = videoData.videoDes || "";
-        if (videoData.channelImage) document.getElementById("cImg").src = videoData.channelImage;
+        
+        // 概要欄のHTMLタグ・リンク構造を適切にレンダリングするためにinnerHTMLを使用
+        document.getElementById("vDesc").innerHTML = videoData.videoDes || "";
+        
+        // フロントエンド側でチャンネルID等から公式系アイコンURLを確実に構築・割り当て
+        const channelId = videoData.channelId || "";
+        if (videoData.channelImage && (videoData.channelImage.startsWith("http") || videoData.channelImage.startsWith("//"))) {
+          document.getElementById("cImg").src = videoData.channelImage;
+        } else {
+          document.getElementById("cImg").src = `https://mirror.unbanned-analytics.com/ggpht/channels-4/download?c_id=${channelId}`;
+        }
 
         renderComments(commentsData.comments || []);
         loadRecs(videoData.videoTitle, videoData.channelName);
@@ -213,8 +222,14 @@
       comments.forEach(c => {
         const item = document.createElement("div");
         item.className = "comment-item";
+        
+        let commentAvatar = `https://mirror.unbanned-analytics.com/ggpht/channels-4/download?c_id=${c.authorId || ''}`;
+        if (c.authorThumb && (c.authorThumb.startsWith("http") || c.authorThumb.startsWith("//"))) {
+          commentAvatar = c.authorThumb;
+        }
+
         item.innerHTML = `
-          <img src="${c.authorThumb}" class="comment-avatar">
+          <img src="${commentAvatar}" class="comment-avatar">
           <div class="comment-content-wrapper">
             <div class="comment-header">${c.author}</div>
             <div class="comment-text">${c.text}</div>
@@ -222,6 +237,15 @@
         `;
         box.appendChild(item);
       });
+    }
+
+    async function loadVideoPageWithAvatar(item, containerEl) {
+      const channelId = item.authorId || item.channelId || "";
+      let avatarUrl = `https://mirror.unbanned-analytics.com/ggpht/channels-4/download?c_id=${channelId}`;
+      if (item.authorThumb && (item.authorThumb.startsWith("http") || item.authorThumb.startsWith("//"))) {
+        avatarUrl = item.authorThumb;
+      }
+      if (containerEl) containerEl.style.backgroundImage = `url('${avatarUrl}')`;
     }
 
     async function loadRecs(title, channel) {
@@ -237,7 +261,8 @@
           card.style.cssText = "display:flex; flex-direction:row; gap:8px; cursor:pointer;";
           card.onclick = () => { window.location.href = `/watch.html?v=${item.id}`; };
 
-          const thumb = item.thumbnail?.url || item.thumbnail || `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`;
+          // 関連動画のサムネイルも公式URLからフロントエンドで直接組み立て
+          const thumb = item.id ? `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg` : (item.thumbnail?.url || item.thumbnail || '');
           card.innerHTML = `
             <div class="thumbnail-container" style="width:168px; min-width:168px; border-radius:8px;">
               <img src="${thumb}">
