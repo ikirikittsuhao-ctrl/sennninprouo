@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 
 router.get('/scratch-edu/:id', async (req, res) => {
   const id = req.params.id;
@@ -29,4 +29,4 @@ router.get('/nocookie/:id', (req, res) => {
   res.send(`https://www.youtube-nocookie.com/embed/${req.params.id}?autoplay=1`);
 });
 
-module.exports = router;
+export default router;
