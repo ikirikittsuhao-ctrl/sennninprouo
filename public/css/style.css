@@ -23,6 +23,7 @@ body {
   color: var(--text-primary);
   font-family: "Roboto", Arial, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Material Symbolsの基本レンダリング保証 */
@@ -184,12 +185,18 @@ aside hr {
 }
 
 .side-item:hover, .side-item.active {
-  background-color: var(--bg-surface);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.side-item.active {
+  font-weight: 500;
 }
 
 .side-text {
   transition: opacity 0.15s ease;
   opacity: 1;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .side-section-title {
@@ -249,6 +256,11 @@ aside hr {
   border-radius: 12px;
   overflow: hidden;
   background-color: #000;
+  transition: border-radius 0.15s ease;
+}
+
+.video-card:hover .thumbnail-container {
+  border-radius: 4px;
 }
 
 .thumbnail-container img {
@@ -268,10 +280,12 @@ aside hr {
   height: 36px;
   border-radius: 50%;
   background-color: var(--bg-surface);
+  flex-shrink: 0;
 }
 
 .video-details {
   flex: 1;
+  min-width: 0;
 }
 
 .video-title {
@@ -284,11 +298,19 @@ aside hr {
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-bottom: 4px;
+  text-overflow: ellipsis;
 }
 
 .video-author, .video-meta {
   font-size: 12px;
   color: var(--text-secondary);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.video-author:hover {
+  color: var(--text-primary);
 }
 
 .player-layout {
@@ -454,6 +476,7 @@ aside hr {
   z-index: 2000;
   display: none;
   width: 320px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
 }
 
 .modal-overlay {
