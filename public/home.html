@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>SenninTube</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header></header>
+
+  <div class="app-layout">
+    <aside></aside>
+
+    <main class="main-content">
+      <h2 id="sectionTitle" style="margin-bottom: 24px; font-size: 20px; font-weight: 600;">人気急上昇</h2>
+      <div class="video-grid" id="mainGrid"></div>
+    </main>
+  </div>
+
+  <script src="/js/storage.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    const mainGrid = document.getElementById("mainGrid");
+    const sectionTitle = document.getElementById("sectionTitle");
+    let currentMode = "home";
+
+    function showSkeletons() {
+      mainGrid.innerHTML = "";
+      for (let i = 0; i < 12; i++) {
+        mainGrid.innerHTML += `
+          <div class="skeleton-card">
+            <div class="skeleton-thumb"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text short"></div>
+          </div>
+        `;
+      }
+    }
+
+    async function loadTrending() {
+      showSkeletons();
+      sectionTitle.innerText = "人気急上昇";
+      try {
+        const res = await fetch("/api/trending");
+        const data = await res.json();
+        renderVideos(data.items || []);
+      } catch (e) { mainGrid.innerHTML = ""; }
+    }
+
+    async function doSearch(q) {
+      showSkeletons();
+      sectionTitle.innerText = `「${q}」の検索結果`;
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        renderVideos(data.items || []);
+      } catch (e) { mainGrid.innerHTML = ""; }
+    }
+
+    function renderVideos(items, isCustomList = false, listKey = null) {
+      mainGrid.innerHTML = items.length ? "" : "<p style='padding:12px; color:var(--text-secondary);'>動画が見つかりません</p>";
+      items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "video-card";
+        
+        const thumb = item.thumbnail?.url || item.thumbnail || (item.id ? `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg` : '');
+        const title = item.title || item.videoTitle;
+        const author = item.author?.name || item.channelTitle || item.channelName || '';
+
+        card.innerHTML = `
+          <div class="thumbnail-container">
+            <img src="${thumb}" alt="">
+          </div>
+          <div class="video-info-row">
+            <div class="video-avatar"></div>
+            <div class="video-details">
+              <div class="video-title">${title}</div>
+              <div class="video-author">${author}</div>
+              ${isCustomList ? `<button onclick="event.stopPropagation(); removeCustom('${listKey}', '${item.id}')" style="background:none; border:none; color:var(--accent); font-size:12px; cursor:pointer; margin-top:6px;">削除</button>` : ''}
+            </div>
+          </div>
+        `;
+        card.onclick = () => { window.location.href = `/watch.html?v=${item.id}`; };
+        mainGrid.appendChild(card);
+      });
+    }
+
+    function changeSection(mode, playlistName = null) {
+      currentMode = mode;
+      document.querySelectorAll("aside .side-item").forEach(el => el.classList.remove("active"));
+      
+      if (mode === "home") {
+        loadTrending();
+        const btn = document.getElementById("sideHomeBtn");
+        if (btn) btn.classList.add("active");
+      } else if (mode === "history") {
+        sectionTitle.innerText = "再生履歴";
+        renderVideos(StorageManager.get("history"), true, "history");
+        const btn = document.getElementById("sideHistoryBtn");
+        if (btn) btn.classList.add("active");
+      } else if (mode === "favorites") {
+        sectionTitle.innerText = "お気に入り";
+        renderVideos(StorageManager.get("favorites"), true, "favorites");
+        const btn = document.getElementById("sideFavBtn");
+        if (btn) btn.classList.add("active");
+      } else if (mode === "watch-later") {
+        sectionTitle.innerText = "後で見る";
+        renderVideos(StorageManager.get("watch-later"), true, "watch-later");
+        const btn = document.getElementById("sideLaterBtn");
+        if (btn) btn.classList.add("active");
+      } else if (mode === "playlist" && playlistName) {
+        sectionTitle.innerText = `プレイリスト: ${playlistName}`;
+        const p = StorageManager.getPlaylists()[playlistName] || [];
+        renderVideos(p, true, `playlist:${playlistName}`);
+      }
+    }
+
+    function removeCustom(key, id) {
+      if (key.startsWith("playlist:")) {
+        const pName = key.split(":")[1];
+        StorageManager.removeFromPlaylist(pName, id);
+        changeSection("playlist", pName);
+      } else {
+        StorageManager.remove(key, id);
+        changeSection(key);
+      }
+      renderSidebarPlaylists();
+    }
+
+    function promptCreatePlaylist() {
+      const name = prompt("プレイリスト名を入力してください:");
+      if (name && name.trim()) {
+        StorageManager.createPlaylist(name.trim());
+        renderSidebarPlaylists();
+      }
+    }
+
+    function renderSidebarPlaylists() {
+      const container = document.getElementById("sidebarPlaylists");
+      if (!container) return;
+      container.innerHTML = "";
+      const playlists = StorageManager.getPlaylists();
+      Object.keys(playlists).forEach(name => {
+        const btn = document.createElement("button");
+        btn.className = "side-item";
+        btn.innerHTML = `<span class="material-symbols-outlined">playlist_play</span><span class="side-text">${name}</span>`;
+        btn.onclick = () => changeSection("playlist", name);
+        container.appendChild(btn);
+      });
+    }
+
+    window.onload = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const q = urlParams.get("q");
+      
+      // コンポーネントをロード（アクティブ状態を確定）
+      await initCommonComponents(q ? 'home' : 'home');
+
+      if (q) {
+        doSearch(q);
+      } else {
+        loadTrending();
+      }
+    };
+  </script>
+</body>
+</html>
